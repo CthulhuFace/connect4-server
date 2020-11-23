@@ -1,5 +1,5 @@
 
-const PORT = process.env.PORT || 9601;
+const PORT = 9601;
 const INDEX = "/index.html";
 
 const logger = require("pino")();
