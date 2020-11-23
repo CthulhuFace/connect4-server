@@ -1,13 +1,13 @@
 {
-    "name": "connect4_server",
-    "version": "1.0.0",
-    "main": "app.js",
-    "scripts": {
-        "start": "node app.js"
-    },
-    "dependencies": {
-        "express": "^4.17.1",
-        "pino": "^6.7.0",
-        "ws": "^7.4.0"
-    }
+  "name": "connect4_server",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "pino": "^6.7.0",
+    "ws": "^7.4.0"
+  }
 }
