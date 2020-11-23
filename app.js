@@ -1,10 +1,17 @@
-var WebSocketServer = require("ws").Server;
 const logger = require("pino")();
 
-const port = 9601;
+const PORT = process.env.PORT || 9601;
+const INDEX = "/index.html";
 
-var wss = new WebSocketServer({ port: port });
-logger.info("Server listening on port " + port);
+const express = require("express");
+
+const server = express()
+    .use((req, res) => res.sendFile(INDEX, { root: __dirname }))
+    .listen(PORT, () => logger.info("Server listening on port " + PORT));
+
+const { Server } = require("ws");
+const wss = new Server({ server });
+
 
 class gameBoard {
     board = [
@@ -72,6 +79,21 @@ wss.on('connection', function connection(ws) {
                 handleChoice(pass, data, ws);
                 break;
         }
+    });
+    ws.on("close", function () {
+        var result = isUserInMap(pendingMap, ws);
+        if (result) {
+            logger.info("Session in pending list canceled(passcode: " + result.key + ", reason: userDisconnected)");
+            clearTimeout(pendingMap.get(result.key).timer);
+            pendingMap.delete(result.key);
+        }
+        var result = isUserInMap(ongoingMap, ws);
+        if (result) {
+            logger.info("Session surrendered(passcode: " + result.key + ", winner: " + result.client.name + ")");
+            endSession(result.key, "surrender",
+                ongoingMap.get(result.key).clients[((ongoingMap.get(result.key).clients.indexOf(result.client) == 0) ? 1 : 0)].name
+            );
+        }
     })
 });
 
@@ -108,6 +130,26 @@ function handleSession(pass, data, ws) {
     }
 }
 
+function isUserInMap(map, ws) {
+    var x = false;
+    map.forEach((values, keys) => {
+        if (x === false) {
+            values.clients.forEach((item, index) => {
+                if (x === false) {
+                    if (ws == item.socket) {
+                        x = {
+                            map: map,
+                            key: keys,
+                            client: values.clients[index]
+                        };
+                    }
+                }
+            })
+        }
+    });
+    return x;
+}
+
 
 function handleChoice(pass, data, ws) {
     var session = ongoingMap.get(pass);
@@ -128,9 +170,10 @@ function handleChoice(pass, data, ws) {
 
     logger.info("Session game update (passcode: " + pass + ", player0: "
         + session.clients[0].name + ", player1: " + session.clients[1].name + ")");
-
-    if (session.gameBoard.checkWinConditions(session.properties.playerTurn.color) !== false) {
-        endSession(pass, session.properties.playerTurn.name);
+    var check = session.gameBoard.checkWinConditions(session.properties.playerTurn.color);
+    if (check !== false) {
+        logger.info("Session terminated (passcode: " + pass + ", winner: " + session.properties.playerTurn.name + ")");
+        endSession(pass, check, session.properties.playerTurn.name);
         return;
     }
     updateTurnInfo(session);
@@ -148,11 +191,11 @@ function configTimer(pass) {
     }, 60000);
 }
 
-function endSession(passcode, winner) {
-    logger.info("Session terminated (passcode: " + passcode + ", winner: " + winner + ")");
+function endSession(passcode, reason, winner) {
     var response = {
-        "type": "gameOver",
-        "winner": winner
+        type: "gameOver",
+        reason: reason,
+        winner: winner
     }
     wss.broadcast(JSON.stringify(response), passcode);
     ongoingMap.delete(passcode);
@@ -161,8 +204,8 @@ function endSession(passcode, winner) {
 function updateTurnInfo(session) {
     session.properties.playerTurn = session.clients[(session.properties.playerTurn == session.clients[0]) ? 1 : 0];
     var jsonInfo = {
-        type: "info", 
-        code:"i_Turn",
+        type: "info",
+        code: "i_Turn",
         color: null,
         turnColor: null,
         turnName: null
