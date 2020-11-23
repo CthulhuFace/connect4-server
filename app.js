@@ -24,27 +24,27 @@ class gameBoard {
         for (var j = 0; j < (7 - 3); j++) {// horizontalCheck 
             for (var i = 0; i < 6; i++) {
                 if (this.board[i][j] == player && this.board[i][j + 1] == player && this.board[i][j + 2] == player && this.board[i][j + 3] == player) {
-                    return { type: "horizontal", x: i, y: j };
+                    return { type: "horizontal", x: [i, i, i, i], y: [j, j+1, j+2, j+3] };
                 }
             }
         }
         for (var i = 0; i < (6 - 3); i++) {// verticalCheck
             for (var j = 0; j < 7; j++) {
                 if (this.board[i][j] == player && this.board[i + 1][j] == player && this.board[i + 2][j] == player && this.board[i + 3][j] == player) {
-                    return { type: "vertical", x: i, y: j };
+                    return { type: "vertical", x: [i, i+1, i+2, i+3], y: [j, j, j, j] };
                 }
             }
         }
         for (var i = 3; i < 6; i++) {// ascendingDiagonalCheck 
             for (var j = 0; j < (7 - 3); j++) {
                 if (this.board[i][j] == player && this.board[i - 1][j + 1] == player && this.board[i - 2][j + 2] == player && this.board[i - 3][j + 3] == player)
-                    return { type: "ascDiag", x: i, y: j };
+                    return { type: "ascDiag", x: [i, i - 1, i - 2, i - 3], y: [j, j + 1, j + 2, j + 3] };
             }
         }
         for (var i = 3; i < 6; i++) {// descendingDiagonalCheck
             for (var j = 3; j < 7; j++) {
                 if (this.board[i][j] == player && this.board[i - 1][j - 1] == player && this.board[i - 2][j - 2] == player && this.board[i - 3][j - 3] == player)
-                    return { type: "descDiag", x: i, y: j };
+                    return { type: "descDiag", x: [i, i - 1, i - 2, i - 3], y: [j, j - 1, j - 2, j - 3] };
             }
         }
         return false;
